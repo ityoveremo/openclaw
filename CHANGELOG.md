@@ -9,6 +9,7 @@ Docs: https://docs.openclaw.ai
 - Android/assistant: auto-send Google Assistant App Actions prompts once chat is healthy and idle, while keeping bare assistant launches as open-only. (#59721) Thanks @obviyus.
 - Matrix/exec approvals: add Matrix-native exec approval prompts with account-scoped approvers, channel-or-DM delivery, and room-thread aware resolution handling. (#58635) Thanks @gumadeiras.
 - Channels/context visibility: add configurable `contextVisibility` per channel (`all`, `allowlist`, `allowlist_quote`) so supplemental room context such as quoted replies, thread roots, and fetched history can be filtered by sender allowlists instead of always passing through as received.
+- WhatsApp/reply quoting: bot auto-replies can now visually quote the triggering message (swipe-to-reply style) via `channels.whatsapp.replyToMode` (`off`/`first`/`all`), matching the existing Telegram, Discord, and Slack pattern. (#57413) Thanks @mcaxtr.
 
 ### Fixes
 

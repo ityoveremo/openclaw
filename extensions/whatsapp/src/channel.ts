@@ -122,12 +122,21 @@ export const whatsappPlugin: ChannelPlugin<ResolvedWhatsAppAccount> =
     pairing: {
       idLabel: "whatsappSenderId",
     },
+    threading: {
+      allowExplicitReplyTagsWhenOff: false,
+      scopedAccountReplyToMode: {
+        resolveAccount: (cfg, accountId) => resolveWhatsAppAccount({ cfg, accountId }),
+        resolveReplyToMode: (account) => account.replyToMode,
+      },
+    },
     outbound: {
       ...createWhatsAppOutboundBase({
         chunker: chunkText,
         sendMessageWhatsApp,
         sendPollWhatsApp,
         shouldLogVerbose: () => getWhatsAppRuntime().logging.shouldLogVerbose(),
+        resolveReplyToMode: ({ cfg, accountId }) =>
+          resolveWhatsAppAccount({ cfg, accountId }).replyToMode ?? "off",
         resolveTarget: ({ to, allowFrom, mode }) =>
           resolveWhatsAppOutboundTarget({ to, allowFrom, mode }),
       }),
