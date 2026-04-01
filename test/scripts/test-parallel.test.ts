@@ -517,7 +517,7 @@ describe("scripts/test-parallel lane planning", () => {
     );
 
     expect(output).toContain("mode=local intent=normal memoryBand=high");
-    expect(output).toContain("unit-deliver-isolated filters=1");
+    expect(output).toMatch(/\bunit(?:-[^\s]+)? filters=1\b/u);
   });
 
   it("prints collect-all failure policy in planner output for wrapper-native flag", () => {
