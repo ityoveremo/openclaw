@@ -15,6 +15,8 @@ import {
 } from "../../scripts/test-planner/planner.mjs";
 import {
   loadChannelTimingManifest,
+  loadUnitMemoryHotspotManifest,
+  selectMemoryHeavyFiles,
   selectTimedHeavyFiles,
 } from "../../scripts/test-runner-manifest.mjs";
 import { bundledPluginFile } from "../helpers/bundled-plugin-paths.js";
@@ -35,6 +37,22 @@ const resolveTimedHeavyChannelFixture = () => {
   });
   if (!file) {
     throw new Error("No timed-heavy channel fixture found");
+  }
+  return file;
+};
+
+const resolveMemoryHeavyUnitFixture = () => {
+  const catalog = loadTestCatalog();
+  const hotspots = loadUnitMemoryHotspotManifest();
+  const [file] = selectMemoryHeavyFiles({
+    candidates: catalog.allKnownUnitFiles,
+    limit: 1,
+    minDeltaKb: hotspots.defaultMinDeltaKb,
+    exclude: catalog.unitBehaviorOverrideSet,
+    hotspots,
+  });
+  if (!file) {
+    throw new Error("No memory-heavy unit fixture found");
   }
   return file;
 };
@@ -599,10 +617,11 @@ describe("test planner", () => {
   });
 
   it("uses hotspot-backed memory isolation when explaining unit tests", () => {
+    const fixture = resolveMemoryHeavyUnitFixture();
     const explanation = explainExecutionTarget(
       {
         mode: "local",
-        fileFilters: ["src/infra/outbound/channel-resolution.test.ts"],
+        fileFilters: [fixture],
       },
       {
         env: {
