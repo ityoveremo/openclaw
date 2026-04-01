@@ -738,7 +738,7 @@ describe("test planner", () => {
     artifacts.cleanupTempArtifacts();
   });
 
-  it("pins the smallest CI include-file batches to fixed shards", () => {
+  it("pins the smallest CI include-file batches to a single shard", () => {
     const env = {
       CI: "true",
       GITHUB_ACTIONS: "true",
@@ -773,9 +773,16 @@ describe("test planner", () => {
     );
 
     expect(smallestBatches.length).toBeGreaterThan(0);
-    expect(smallestBatches.every((unit) => typeof unit.fixedShardIndex === "number")).toBe(true);
     expect(
-      smallestBatches.every((unit) => plan.topLevelSingleShardAssignments.get(unit) === undefined),
+      smallestBatches.every((unit) => {
+        const fixedShardIndex =
+          typeof unit.fixedShardIndex === "number" ? unit.fixedShardIndex : undefined;
+        const topLevelAssignment = plan.topLevelSingleShardAssignments.get(unit);
+        const shardAssignments = [fixedShardIndex, topLevelAssignment].filter(
+          (value): value is number => typeof value === "number",
+        );
+        return shardAssignments.length === 1;
+      }),
     ).toBe(true);
 
     artifacts.cleanupTempArtifacts();
