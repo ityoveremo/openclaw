@@ -14,6 +14,16 @@ import {
   resolveTestRunExitCode,
 } from "../../scripts/test-parallel-utils.mjs";
 import { loadTestCatalog } from "../../scripts/test-planner/catalog.mjs";
+import {
+  createExecutionArtifacts,
+  formatExplanation,
+  formatPlanOutput,
+} from "../../scripts/test-planner/executor.mjs";
+import {
+  buildCIExecutionManifest,
+  buildExecutionPlan,
+  explainExecutionTarget,
+} from "../../scripts/test-planner/planner.mjs";
 import { bundledPluginFile } from "../helpers/bundled-plugin-paths.js";
 
 const clearPlannerShardEnv = (env) => {
@@ -34,37 +44,42 @@ const clearPlannerShardEnv = (env) => {
   return nextEnv;
 };
 
-const sharedTargetedChannelProxyFiles = (() => {
+let targetedProxyFilesCache = null;
+
+const getTargetedProxyFiles = () => {
+  if (targetedProxyFilesCache !== null) {
+    return targetedProxyFilesCache;
+  }
   const catalog = loadTestCatalog();
-  return catalog.allKnownTestFiles
+  const sharedTargetedChannelProxyFiles = catalog.allKnownTestFiles
     .filter((file) => {
       const classification = catalog.classifyTestFile(file);
       return classification.surface === "channels" && !classification.isolated;
     })
     .slice(0, 100);
-})();
-
-const sharedTargetedUnitProxyFiles = (() => {
-  const catalog = loadTestCatalog();
-  return catalog.allKnownTestFiles
+  const sharedTargetedUnitProxyFiles = catalog.allKnownTestFiles
     .filter((file) => {
       const classification = catalog.classifyTestFile(file);
       return classification.surface === "unit" && !classification.isolated;
     })
     .slice(0, 100);
-})();
-
-const targetedChannelProxyFiles = [
-  ...sharedTargetedChannelProxyFiles,
-  bundledPluginFile("discord", "src/monitor/message-handler.preflight.acp-bindings.test.ts"),
-  bundledPluginFile("discord", "src/monitor/monitor.agent-components.test.ts"),
-  bundledPluginFile("whatsapp", "src/monitor-inbox.streams-inbound-messages.test.ts"),
-];
-
-const targetedUnitProxyFiles = [
-  ...sharedTargetedUnitProxyFiles,
-  "src/cli/qr-dashboard.integration.test.ts",
-];
+  targetedProxyFilesCache = {
+    sharedTargetedChannelProxyFiles,
+    sharedTargetedUnitProxyFiles,
+    targetedChannelProxyFiles: [
+      ...sharedTargetedChannelProxyFiles,
+      bundledPluginFile("discord", "src/monitor/message-handler.preflight.acp-bindings.test.ts"),
+      bundledPluginFile("discord", "src/monitor/monitor.agent-components.test.ts"),
+      bundledPluginFile("telegram", "src/bot.create-telegram-bot.test.ts"),
+      bundledPluginFile("whatsapp", "src/monitor-inbox.streams-inbound-messages.test.ts"),
+    ],
+    targetedUnitProxyFiles: [
+      ...sharedTargetedUnitProxyFiles,
+      "src/cli/qr-dashboard.integration.test.ts",
+    ],
+  };
+  return targetedProxyFilesCache;
+};
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "../..");
 const HIGH_MEMORY_LOCAL_PLANNER_ENV = {
@@ -96,6 +111,54 @@ function createHighMemoryLocalPlannerEnv(overrides: NodeJS.ProcessEnv = {}): Nod
   });
 }
 
+function createPlannerRequest(overrides = {}) {
+  return {
+    failurePolicy: null,
+    mode: null,
+    profile: null,
+    surfaces: [],
+    fileFilters: [],
+    passthroughArgs: [],
+    ...overrides,
+  };
+}
+
+function runPlannerOutput(
+  requestOverrides = {},
+  env: NodeJS.ProcessEnv = createPlannerEnv(),
+): string {
+  const artifacts = createExecutionArtifacts(env);
+  try {
+    const plan = buildExecutionPlan(createPlannerRequest(requestOverrides), {
+      env,
+      writeTempJsonArtifact: artifacts.writeTempJsonArtifact,
+    });
+    return formatPlanOutput(plan);
+  } finally {
+    artifacts.cleanupTempArtifacts();
+  }
+}
+
+function runExplanationOutput(
+  file: string,
+  requestOverrides = {},
+  env: NodeJS.ProcessEnv = createPlannerEnv(),
+): string {
+  const explanation = explainExecutionTarget(
+    createPlannerRequest({
+      ...requestOverrides,
+      fileFilters: [file],
+      passthroughArgs: [],
+    }),
+    { env },
+  );
+  return formatExplanation(explanation);
+}
+
+function runCIManifestOutput(scope = {}, env: NodeJS.ProcessEnv = createPlannerEnv()): string {
+  return `${JSON.stringify(buildCIExecutionManifest(scope, { env }), null, 2)}\n`;
+}
+
 function runPlannerPlan(args: string[], envOverrides: NodeJS.ProcessEnv = {}): string {
   return execFileSync("node", ["scripts/test-parallel.mjs", ...args], {
     cwd: REPO_ROOT,
@@ -103,13 +166,6 @@ function runPlannerPlan(args: string[], envOverrides: NodeJS.ProcessEnv = {}): s
     encoding: "utf8",
     stdio: ["pipe", "pipe", "pipe"],
   });
-}
-
-function runHighMemoryLocalMultiSurfacePlan(): string {
-  return runPlannerPlan(
-    ["--plan", "--surface", "unit", "--surface", "extensions", "--surface", "channels"],
-    createHighMemoryLocalPlannerEnv(),
-  );
 }
 
 function getPlanLines(output: string, prefix: string): string[] {
@@ -284,39 +340,38 @@ describe("scripts/test-parallel memory trace parsing", () => {
 
 describe("scripts/test-parallel lane planning", () => {
   it("keeps serial profile on split unit lanes instead of one giant unit worker", () => {
-    const output = runPlannerPlan(["--plan"], {
-      OPENCLAW_TEST_PROFILE: "serial",
-    });
+    const output = runPlannerOutput({ profile: "serial" });
 
     expect(output).toContain("unit-fast");
     expect(output).not.toContain("unit filters=all maxWorkers=1");
   });
 
   it("recycles default local unit-fast runs into bounded batches", () => {
-    const output = runPlannerPlan(["--plan"], {
-      CI: "",
-      OPENCLAW_TEST_UNIT_FAST_LANES: "1",
-      OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_MS: "1",
-    });
+    const output = runPlannerOutput(
+      {},
+      createPlannerEnv({
+        CI: "",
+        OPENCLAW_TEST_UNIT_FAST_LANES: "1",
+        OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_MS: "1",
+      }),
+    );
 
     expect(output).toContain("unit-fast-batch-");
     expect(output).not.toContain("unit-fast filters=all maxWorkers=");
   });
 
   it("keeps legacy base-pinned targeted reruns on dedicated forks lanes", () => {
-    const output = runPlannerPlan([
-      "--plan",
-      "--files",
-      "src/auto-reply/reply/followup-runner.test.ts",
-    ]);
+    const output = runPlannerOutput({
+      fileFilters: ["src/auto-reply/reply/followup-runner.test.ts"],
+    });
 
     expect(output).toContain("base-pinned-followup-runner");
     expect(output).not.toContain("base-followup-runner");
   });
 
   it("reports capability-derived output for mid-memory local macOS hosts", () => {
-    const output = runPlannerPlan(
-      ["--plan", "--surface", "unit", "--surface", "extensions"],
+    const output = runPlannerOutput(
+      { surfaces: ["unit", "extensions"] },
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
         OPENCLAW_TEST_HOST_CPU_COUNT: "10",
@@ -330,12 +385,12 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("uses higher shared extension worker counts on high-memory local hosts", () => {
-    const highMemoryOutput = runPlannerPlan(
-      ["--plan", "--surface", "extensions"],
+    const highMemoryOutput = runPlannerOutput(
+      { surfaces: ["extensions"] },
       createHighMemoryLocalPlannerEnv(),
     );
-    const midMemoryOutput = runPlannerPlan(
-      ["--plan", "--surface", "extensions"],
+    const midMemoryOutput = runPlannerOutput(
+      { surfaces: ["extensions"] },
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
         OPENCLAW_TEST_HOST_CPU_COUNT: "10",
@@ -354,7 +409,10 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("starts isolated channel lanes before shared extension batches on high-memory local hosts", () => {
-    const output = runHighMemoryLocalMultiSurfacePlan();
+    const output = runPlannerOutput(
+      { surfaces: ["unit", "extensions", "channels"] },
+      createHighMemoryLocalPlannerEnv(),
+    );
 
     const firstChannelIsolated = output.indexOf(
       "message-handler.preflight.acp-bindings-channels-isolated",
@@ -368,20 +426,22 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("uses coarser unit-fast batching for high-memory local multi-surface runs", () => {
-    const output = runHighMemoryLocalMultiSurfacePlan();
+    const output = runPlannerOutput(
+      { surfaces: ["unit", "extensions", "channels"] },
+      createHighMemoryLocalPlannerEnv(),
+    );
 
     expect(output).toContain("unit-fast-batch-4");
     expect(output).not.toContain("unit-fast-batch-5");
   });
 
   it("uses earlier targeted channel batching on high-memory local hosts", () => {
-    const output = runPlannerPlan(
-      [
-        "--plan",
-        "--surface",
-        "channels",
-        ...targetedChannelProxyFiles.flatMap((file) => ["--files", file]),
-      ],
+    const { targetedChannelProxyFiles } = getTargetedProxyFiles();
+    const output = runPlannerOutput(
+      {
+        surfaces: ["channels"],
+        fileFilters: targetedChannelProxyFiles,
+      },
       createHighMemoryLocalPlannerEnv(),
     );
 
@@ -403,13 +463,12 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("uses targeted unit batching on high-memory local hosts", () => {
-    const output = runPlannerPlan(
-      [
-        "--plan",
-        "--surface",
-        "unit",
-        ...targetedUnitProxyFiles.flatMap((file) => ["--files", file]),
-      ],
+    const { sharedTargetedUnitProxyFiles, targetedUnitProxyFiles } = getTargetedProxyFiles();
+    const output = runPlannerOutput(
+      {
+        surfaces: ["unit"],
+        fileFilters: targetedUnitProxyFiles,
+      },
       createHighMemoryLocalPlannerEnv(),
     );
 
@@ -428,7 +487,7 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("explains targeted file ownership and execution policy", () => {
-    const output = runPlannerPlan(["--explain", "src/auto-reply/reply/followup-runner.test.ts"]);
+    const output = runExplanationOutput("src/auto-reply/reply/followup-runner.test.ts");
 
     expect(output).toContain("surface=base");
     expect(output).toContain("reasons=base-surface,base-pinned-manifest");
@@ -436,10 +495,9 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("routes targeted contract tests through the contracts config", () => {
-    const output = runPlannerPlan([
-      "--explain",
+    const output = runExplanationOutput(
       "src/channels/plugins/contracts/registry-backed.contract.test.ts",
-    ]);
+    );
 
     expect(output).toContain("surface=contracts");
     expect(output).toContain("vitest.contracts.config.ts");
@@ -459,18 +517,21 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("prints the planner-backed CI manifest as JSON", () => {
-    const output = runPlannerPlan(["--ci-manifest"], {
-      GITHUB_EVENT_NAME: "pull_request",
-      OPENCLAW_CI_DOCS_ONLY: "false",
-      OPENCLAW_CI_DOCS_CHANGED: "false",
-      OPENCLAW_CI_RUN_NODE: "true",
-      OPENCLAW_CI_RUN_MACOS: "true",
-      OPENCLAW_CI_RUN_ANDROID: "false",
-      OPENCLAW_CI_RUN_WINDOWS: "true",
-      OPENCLAW_CI_RUN_SKILLS_PYTHON: "false",
-      OPENCLAW_CI_HAS_CHANGED_EXTENSIONS: "false",
-      OPENCLAW_CI_CHANGED_EXTENSIONS_MATRIX: '{"include":[]}',
-    });
+    const output = runCIManifestOutput(
+      {
+        eventName: "pull_request",
+        docsOnly: false,
+        docsChanged: false,
+        runNode: true,
+        runMacos: true,
+        runAndroid: false,
+        runWindows: true,
+        runSkillsPython: false,
+        hasChangedExtensions: false,
+        changedExtensionsMatrix: { include: [] },
+      },
+      createPlannerEnv(),
+    );
 
     const manifest = JSON.parse(output);
     expect(manifest.jobs.checks.enabled).toBe(true);
@@ -507,8 +568,11 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("passes through vitest --mode values that are not wrapper runtime overrides", () => {
-    const output = runPlannerPlan(
-      ["--plan", "--mode", "development", "src/infra/outbound/deliver.test.ts"],
+    const output = runPlannerOutput(
+      {
+        fileFilters: ["src/infra/outbound/deliver.test.ts"],
+        passthroughArgs: ["--mode", "development"],
+      },
       createLocalPlannerEnv({
         RUNNER_OS: "Linux",
         OPENCLAW_TEST_HOST_CPU_COUNT: "16",
@@ -521,37 +585,46 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("prints collect-all failure policy in planner output for wrapper-native flag", () => {
-    const output = runPlannerPlan(["--plan", "--collect-failures", "--surface", "unit"]);
+    const output = runPlannerOutput({
+      failurePolicy: "collect-all",
+      surfaces: ["unit"],
+    });
 
     expect(output).toContain("failurePolicy=collect-all");
   });
 
   it("maps --bail=0 to collect-all failure policy in planner output", () => {
-    const output = runPlannerPlan(["--plan", "--surface", "unit", "--", "--bail=0"]);
+    const output = runPlannerOutput({
+      surfaces: ["unit"],
+      passthroughArgs: ["--bail=0"],
+    });
 
     expect(output).toContain("failurePolicy=collect-all");
   });
 
   it("rejects wrapper-level positive --bail values", () => {
-    expect(() => runPlannerPlan(["--plan", "--surface", "unit", "--", "--bail=2"])).toThrowError(
-      /Unsupported wrapper-level --bail value/u,
-    );
+    expect(() =>
+      runPlannerOutput({
+        surfaces: ["unit"],
+        passthroughArgs: ["--bail=2"],
+      }),
+    ).toThrowError(/Unsupported wrapper-level --bail value/u);
   });
 
   it("rejects removed machine-name profiles", () => {
-    expect(() => runPlannerPlan(["--plan", "--profile", "macmini"])).toThrowError(
+    expect(() => runPlannerOutput({ profile: "macmini" })).toThrowError(
       /Unsupported test profile "macmini"/u,
     );
   });
 
   it("rejects unknown explicit surface names", () => {
-    expect(() => runPlannerPlan(["--plan", "--surface", "channel"])).toThrowError(
+    expect(() => runPlannerOutput({ surfaces: ["channel"] })).toThrowError(
       /Unsupported --surface value\(s\): channel/u,
     );
   });
 
   it("supports the explicit contracts surface", () => {
-    const output = runPlannerPlan(["--plan", "--surface", "contracts"]);
+    const output = runPlannerOutput({ surfaces: ["contracts"] });
 
     expect(output).toContain("contracts filters=all");
     expect(output).toContain("surface=contracts");
@@ -580,7 +653,7 @@ describe("scripts/test-parallel lane planning", () => {
     fs.writeFileSync(tempFilePath, "export const notATest = true;\n", "utf8");
 
     try {
-      expect(() => runPlannerPlan(["--plan", "--files", tempFilePath])).toThrowError(
+      expect(() => runPlannerOutput({ fileFilters: [tempFilePath] })).toThrowError(
         /is not a known test file/u,
       );
     } finally {
