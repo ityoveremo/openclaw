@@ -516,6 +516,13 @@ describe("scripts/test-parallel lane planning", () => {
     expect(output).not.toContain("vitest.channels.config.ts");
   });
 
+  it("routes targeted script tests through the contracts config", () => {
+    const output = runExplanationOutput("test/scripts/test-planner.test.ts");
+
+    expect(output).toContain("surface=contracts");
+    expect(output).toContain("vitest.contracts.config.ts");
+    expect(output).not.toContain("vitest.unit.config.ts");
+  });
   it("prints the planner-backed CI manifest as JSON", () => {
     const output = runCIManifestOutput(
       {
