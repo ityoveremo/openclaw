@@ -1,18 +1,15 @@
-import { resolveWhatsAppAccount } from "../../../extensions/whatsapp/api.js";
-import { normalizeWhatsAppTarget } from "../../channels/plugins/normalize/whatsapp.js";
 import type { ChannelId } from "../../channels/plugins/types.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { resolveAgentMainSessionKey } from "../../config/sessions/main-session.js";
 import { resolveStorePath } from "../../config/sessions/paths.js";
 import { loadSessionStore } from "../../config/sessions/store-load.js";
-import { resolveMessageChannelSelection } from "../../infra/outbound/channel-selection.js";
 import { maybeResolveIdLikeTarget } from "../../infra/outbound/target-resolver.js";
+import { tryResolveLoadedOutboundTarget } from "../../infra/outbound/targets-loaded.js";
+import { resolveSessionDeliveryTarget } from "../../infra/outbound/targets-session.js";
 import type { OutboundChannel } from "../../infra/outbound/targets.js";
-import {
-  resolveOutboundTarget,
-  resolveSessionDeliveryTarget,
-} from "../../infra/outbound/targets.js";
 import { readChannelAllowFromStoreSync } from "../../pairing/pairing-store.js";
+import { resolveWhatsAppAccount } from "../../plugin-sdk/whatsapp-surface.js";
+import { normalizeWhatsAppTarget } from "../../plugin-sdk/whatsapp-targets.js";
 import { buildChannelAccountBindings } from "../../routing/bindings.js";
 import { normalizeAccountId, normalizeAgentId } from "../../routing/session-key.js";
 
@@ -34,6 +31,24 @@ export type DeliveryTargetResolution =
       mode: "explicit" | "implicit";
       error: Error;
     };
+
+let targetsRuntimePromise:
+  | Promise<typeof import("../../infra/outbound/targets.runtime.js")>
+  | undefined;
+
+async function loadTargetsRuntime() {
+  targetsRuntimePromise ??= import("../../infra/outbound/targets.runtime.js");
+  return await targetsRuntimePromise;
+}
+
+let channelSelectionRuntimePromise:
+  | Promise<typeof import("../../infra/outbound/channel-selection.runtime.js")>
+  | undefined;
+
+async function loadChannelSelectionRuntime() {
+  channelSelectionRuntimePromise ??= import("../../infra/outbound/channel-selection.runtime.js");
+  return await channelSelectionRuntimePromise;
+}
 
 export async function resolveDeliveryTarget(
   cfg: OpenClawConfig,
@@ -77,6 +92,7 @@ export async function resolveDeliveryTarget(
       fallbackChannel = preliminary.lastChannel;
     } else {
       try {
+        const { resolveMessageChannelSelection } = await loadChannelSelectionRuntime();
         const selection = await resolveMessageChannelSelection({ cfg });
         fallbackChannel = selection.channel;
       } catch (err) {
@@ -173,7 +189,7 @@ export async function resolveDeliveryTarget(
     }
   }
 
-  const docked = resolveOutboundTarget({
+  let docked = tryResolveLoadedOutboundTarget({
     channel,
     to: toCandidate,
     cfg,
@@ -181,6 +197,17 @@ export async function resolveDeliveryTarget(
     mode,
     allowFrom: allowFromOverride,
   });
+  if (!docked) {
+    const { resolveOutboundTarget } = await loadTargetsRuntime();
+    docked = resolveOutboundTarget({
+      channel,
+      to: toCandidate,
+      cfg,
+      accountId,
+      mode,
+      allowFrom: allowFromOverride,
+    });
+  }
   if (!docked.ok) {
     return {
       ok: false,
