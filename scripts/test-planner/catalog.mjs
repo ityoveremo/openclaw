@@ -14,6 +14,7 @@ import { dedupeFilesPreserveOrder, loadTestRunnerBehavior } from "../test-runner
 
 const baseConfigPrefixes = ["src/agents/", "src/auto-reply/", "src/commands/", "test/", "ui/"];
 const contractTestPrefixes = ["src/channels/plugins/contracts/", "src/plugins/contracts/"];
+let cachedTestCatalog = null;
 
 export const normalizeRepoPath = (value) => value.split(path.sep).join("/");
 
@@ -48,8 +49,15 @@ const walkTestFiles = (rootDir) => {
   return files;
 };
 
-export function loadTestCatalog() {
-  const behaviorManifest = loadTestRunnerBehavior();
+export function clearTestCatalogCacheForTest() {
+  cachedTestCatalog = null;
+}
+
+export function loadTestCatalog(options = {}) {
+  if (!options.forceReload && cachedTestCatalog !== null) {
+    return cachedTestCatalog;
+  }
+  const behaviorManifest = loadTestRunnerBehavior(options);
   const existingFiles = (entries) =>
     entries.map((entry) => entry.file).filter((file) => fs.existsSync(file));
   const existingUnitConfigFiles = (entries) => existingFiles(entries).filter(isUnitConfigTestFile);
@@ -194,7 +202,7 @@ export function loadTestCatalog() {
     return allKnownTestFiles.filter((file) => file.includes(normalizedFilter));
   };
 
-  return {
+  const catalog = {
     allKnownTestFiles,
     allKnownUnitFiles: allKnownTestFiles.filter((file) => isUnitConfigTestFile(file)),
     baseThreadPinnedFiles,
@@ -210,6 +218,10 @@ export function loadTestCatalog() {
     classifyTestFile,
     resolveFilterMatches,
   };
+  if (!options.forceReload) {
+    cachedTestCatalog = catalog;
+  }
+  return catalog;
 }
 
 export const testSurfaces = [

@@ -35,6 +35,10 @@ const defaultExtensionMemoryHotspotManifest = {
   files: {},
 };
 
+let cachedTestRunnerBehavior = null;
+const cachedTimingManifests = new Map();
+const cachedMemoryHotspotManifests = new Map();
+
 const normalizeManifestEntries = (entries) =>
   entries
     .map((entry) =>
@@ -83,13 +87,22 @@ const mergeManifestStrings = (section, keys) => {
   return merged;
 };
 
-export function loadTestRunnerBehavior() {
+export function clearTestRunnerManifestCachesForTest() {
+  cachedTestRunnerBehavior = null;
+  cachedTimingManifests.clear();
+  cachedMemoryHotspotManifests.clear();
+}
+
+export function loadTestRunnerBehavior(options = {}) {
+  if (!options.forceReload && cachedTestRunnerBehavior !== null) {
+    return cachedTestRunnerBehavior;
+  }
   const raw = tryReadJsonFile(behaviorManifestPath, {});
   const unit = raw.unit ?? {};
   const base = raw.base ?? {};
   const channels = raw.channels ?? {};
   const extensions = raw.extensions ?? {};
-  return {
+  const behavior = {
     base: {
       threadPinned: mergeManifestEntries(base, ["threadPinned", "threadSingleton"]),
     },
@@ -105,9 +118,16 @@ export function loadTestRunnerBehavior() {
       threadPinned: mergeManifestEntries(unit, ["threadPinned", "threadSingleton"]),
     },
   };
+  if (!options.forceReload) {
+    cachedTestRunnerBehavior = behavior;
+  }
+  return behavior;
 }
 
-const loadTimingManifest = (manifestPath, fallbackManifest) => {
+const loadTimingManifest = (manifestPath, fallbackManifest, options = {}) => {
+  if (!options.forceReload && cachedTimingManifests.has(manifestPath)) {
+    return cachedTimingManifests.get(manifestPath);
+  }
   const raw = tryReadJsonFile(manifestPath, fallbackManifest);
   const defaultDurationMs =
     Number.isFinite(raw.defaultDurationMs) && raw.defaultDurationMs > 0
@@ -135,27 +155,34 @@ const loadTimingManifest = (manifestPath, fallbackManifest) => {
       .filter(([, value]) => value !== null),
   );
 
-  return {
+  const manifest = {
     config: typeof raw.config === "string" && raw.config ? raw.config : fallbackManifest.config,
     generatedAt: typeof raw.generatedAt === "string" ? raw.generatedAt : "",
     defaultDurationMs,
     files,
   };
+  if (!options.forceReload) {
+    cachedTimingManifests.set(manifestPath, manifest);
+  }
+  return manifest;
 };
 
-export function loadUnitTimingManifest() {
-  return loadTimingManifest(unitTimingManifestPath, defaultTimingManifest);
+export function loadUnitTimingManifest(options = {}) {
+  return loadTimingManifest(unitTimingManifestPath, defaultTimingManifest, options);
 }
 
-export function loadChannelTimingManifest() {
-  return loadTimingManifest(channelTimingManifestPath, defaultChannelTimingManifest);
+export function loadChannelTimingManifest(options = {}) {
+  return loadTimingManifest(channelTimingManifestPath, defaultChannelTimingManifest, options);
 }
 
-export function loadExtensionTimingManifest() {
-  return loadTimingManifest(extensionTimingManifestPath, defaultExtensionTimingManifest);
+export function loadExtensionTimingManifest(options = {}) {
+  return loadTimingManifest(extensionTimingManifestPath, defaultExtensionTimingManifest, options);
 }
 
-const loadMemoryHotspotManifest = (manifestPath, fallbackManifest) => {
+const loadMemoryHotspotManifest = (manifestPath, fallbackManifest, options = {}) => {
+  if (!options.forceReload && cachedMemoryHotspotManifests.has(manifestPath)) {
+    return cachedMemoryHotspotManifests.get(manifestPath);
+  }
   const raw = tryReadJsonFile(manifestPath, fallbackManifest);
   const defaultMinDeltaKb =
     Number.isFinite(raw.defaultMinDeltaKb) && raw.defaultMinDeltaKb > 0
@@ -184,23 +211,36 @@ const loadMemoryHotspotManifest = (manifestPath, fallbackManifest) => {
       .filter(([, value]) => value !== null),
   );
 
-  return {
-    config: typeof raw.config === "string" && raw.config ? raw.config : fallbackManifest.config,
+  const manifest = {
+    config:
+      typeof raw.config === "string" && raw.config
+        ? raw.config
+        : fallbackManifest.config,
     generatedAt: typeof raw.generatedAt === "string" ? raw.generatedAt : "",
     defaultMinDeltaKb,
     files,
   };
+  if (!options.forceReload) {
+    cachedMemoryHotspotManifests.set(manifestPath, manifest);
+  }
+  return manifest;
 };
 
-export function loadUnitMemoryHotspotManifest() {
-  return loadMemoryHotspotManifest(unitMemoryHotspotManifestPath, defaultMemoryHotspotManifest);
+export function loadUnitMemoryHotspotManifest(options = {}) {
+  return loadMemoryHotspotManifest(
+    unitMemoryHotspotManifestPath,
+    defaultMemoryHotspotManifest,
+    options,
+  );
 }
 
-export function loadExtensionMemoryHotspotManifest() {
+export function loadExtensionMemoryHotspotManifest(options = {}) {
   return loadMemoryHotspotManifest(
     extensionMemoryHotspotManifestPath,
     defaultExtensionMemoryHotspotManifest,
+    options,
   );
+}
 }
 
 export function selectTimedHeavyFiles({
