@@ -13,11 +13,7 @@ import {
 import { dedupeFilesPreserveOrder, loadTestRunnerBehavior } from "../test-runner-manifest.mjs";
 
 const baseConfigPrefixes = ["src/agents/", "src/auto-reply/", "src/commands/", "test/", "ui/"];
-const contractTestPrefixes = [
-  "src/channels/plugins/contracts/",
-  "src/plugins/contracts/",
-  "test/scripts/",
-];
+const contractTestPrefixes = ["src/channels/plugins/contracts/", "src/plugins/contracts/", "test/"];
 let cachedTestCatalog = null;
 
 export const normalizeRepoPath = (value) => value.split(path.sep).join("/");
