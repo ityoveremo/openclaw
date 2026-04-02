@@ -259,6 +259,10 @@
         "reason": "This plugin command suite contains a broad parameterized binding matrix and can time out only under the congested unit-fast lane; keep it isolated so command binding coverage remains deterministic."
       },
       {
+        "file": "src/config/sessions/transcript.test.ts",
+        "reason": "This transcript-owned suite intentionally pulls the pi-coding-agent transcript runtime; keep it in its own forked unit lane so the shared config batch does not pay that heavy transcript import graph."
+      },
+      {
         "file": "src/plugin-sdk/package-contract-guardrails.test.ts",
         "reason": "This packed-artifact contract suite shells out through npm pack/install and passes alone but can overrun the shared unit-fast lane when it competes with other package-heavy unit batches."
       },
