@@ -6,6 +6,7 @@ import {
   writeJsonFile,
 } from "./test-report-utils.mjs";
 import { extensionTimingManifestPath, unitTimingManifestPath } from "./test-runner-manifest.mjs";
+import { loadWrapperUnitTimingReport } from "./test-update-timings-utils.mjs";
 
 const resolveDefaultManifestSettings = (config) => {
   if (config === "vitest.extensions.config.ts") {
@@ -27,7 +28,9 @@ if (process.argv.slice(2).includes("--help")) {
     [
       "Usage: node scripts/test-update-timings.mjs [options]",
       "",
-      "Generate or refresh a test timing manifest from a Vitest JSON report.",
+      "Generate or refresh a test timing manifest.",
+      "Unit timings are gathered from the wrapper-planned unit runs.",
+      "Non-unit configs still use a Vitest JSON report.",
       "",
       "Options:",
       "  --config <path>                Vitest config to run when no report is supplied",
@@ -77,8 +80,18 @@ function parseArgs(argv) {
   };
 }
 
+function loadTimingReport(opts) {
+  if (opts.reportPath) {
+    return loadVitestReportFromArgs(opts, "openclaw-vitest-timings");
+  }
+  if (opts.config === "vitest.unit.config.ts") {
+    return loadWrapperUnitTimingReport();
+  }
+  return loadVitestReportFromArgs(opts, "openclaw-vitest-timings");
+}
+
 const opts = parseArgs(process.argv.slice(2));
-const report = loadVitestReportFromArgs(opts, "openclaw-vitest-timings");
+const report = loadTimingReport(opts);
 const files = Object.fromEntries(
   collectVitestFileDurations(report, normalizeTrackedRepoPath)
     .toSorted((a, b) => b.durationMs - a.durationMs)
