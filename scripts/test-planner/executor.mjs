@@ -355,13 +355,16 @@ export async function executePlan(plan, options = {}) {
   const windowsCiArgs = plan.runtimeCapabilities.isWindowsCi
     ? ["--dangerouslyIgnoreUnhandledErrors"]
     : [];
-  const silentArgs = env.OPENCLAW_TEST_SHOW_PASSED_LOGS === "1" ? [] : ["--silent=passed-only"];
   const rawMemoryTrace = env.OPENCLAW_TEST_MEMORY_TRACE?.trim().toLowerCase();
   const memoryTraceEnabled =
     process.platform !== "win32" &&
     (rawMemoryTrace === "1" ||
       rawMemoryTrace === "true" ||
       (rawMemoryTrace !== "0" && rawMemoryTrace !== "false" && plan.runtimeCapabilities.isCI));
+  const silentArgs =
+    memoryTraceEnabled || env.OPENCLAW_TEST_SHOW_PASSED_LOGS === "1"
+      ? []
+      : ["--silent=passed-only"];
   const parseEnvNumber = (name, fallback) => {
     const parsed = Number.parseInt(env[name] ?? "", 10);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
@@ -421,6 +424,11 @@ export async function executePlan(plan, options = {}) {
       const startedAt = Date.now();
       const entryArgs = unit.args;
       const explicitEntryFilters = getExplicitEntryFilters(entryArgs);
+      const hasReporterArg = entryArgs.some(
+        (arg) => arg === "--reporter" || arg.startsWith("--reporter="),
+      );
+      const memoryTraceReporterArgs =
+        memoryTraceEnabled && !hasReporterArg ? ["--reporter=default"] : [];
       const args = unit.maxWorkers
         ? [
             ...entryArgs,
@@ -428,9 +436,10 @@ export async function executePlan(plan, options = {}) {
             String(unit.maxWorkers),
             ...silentArgs,
             ...windowsCiArgs,
+            ...memoryTraceReporterArgs,
             ...extraArgs,
           ]
-        : [...entryArgs, ...silentArgs, ...windowsCiArgs, ...extraArgs];
+        : [...entryArgs, ...silentArgs, ...windowsCiArgs, ...memoryTraceReporterArgs, ...extraArgs];
       const spawnArgs = [...pnpmInvocation.args, ...args];
       const shardLabel = getShardLabel(extraArgs);
       const artifactStem = [

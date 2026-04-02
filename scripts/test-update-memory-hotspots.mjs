@@ -1,4 +1,10 @@
-import { intFlag, parseFlagArgs, stringFlag, stringListFlag } from "./lib/arg-utils.mjs";
+import {
+  booleanFlag,
+  intFlag,
+  parseFlagArgs,
+  stringFlag,
+  stringListFlag,
+} from "./lib/arg-utils.mjs";
 import { parseMemoryTraceSummaryLines } from "./test-parallel-memory.mjs";
 import { normalizeTrackedRepoPath, tryReadJsonFile, writeJsonFile } from "./test-report-utils.mjs";
 import { unitMemoryHotspotManifestPath } from "./test-runner-manifest.mjs";
@@ -21,6 +27,7 @@ if (process.argv.slice(2).includes("--help")) {
       "  --gh-job <id>              GitHub Actions job id to ingest via gh (repeatable)",
       "  --gh-run <id>              GitHub Actions run id to ingest via gh (repeatable)",
       "  --gh-run-job-match <text>  Filter gh-run jobs by name substring (repeatable)",
+      "  --merge-existing           Keep current manifest entries and merge observed hotspots into them",
       "  --min-delta-kb <kb>        Minimum RSS delta to retain (default: 262144)",
       "  --limit <count>            Max hotspot entries to retain (default: 64)",
       "  --help                     Show this help text",
@@ -47,6 +54,7 @@ function parseArgs(argv) {
       ghJobs: [],
       ghRuns: [],
       ghRunJobMatches: [],
+      mergeExisting: false,
       minDeltaKb: 256 * 1024,
       limit: 64,
     },
@@ -59,6 +67,7 @@ function parseArgs(argv) {
       stringListFlag("--gh-job", "ghJobs"),
       stringListFlag("--gh-run", "ghRuns"),
       stringListFlag("--gh-run-job-match", "ghRunJobMatches"),
+      booleanFlag("--merge-existing", "mergeExisting"),
       intFlag("--min-delta-kb", "minDeltaKb", { min: 1 }),
       intFlag("--limit", "limit", { min: 1 }),
     ],
@@ -110,10 +119,12 @@ if (opts.logs.length === 0 && opts.ghJobs.length === 0 && opts.ghRuns.length ===
 }
 
 const aggregated = new Map();
-const existing = tryReadJsonFile(opts.out, null);
-if (existing) {
-  for (const [file, value] of Object.entries(existing.files ?? {})) {
-    mergeHotspotEntry(aggregated, file, value);
+if (opts.mergeExisting) {
+  const existing = tryReadJsonFile(opts.out, null);
+  if (existing) {
+    for (const [file, value] of Object.entries(existing.files ?? {})) {
+      mergeHotspotEntry(aggregated, file, value);
+    }
   }
 }
 for (const input of loadHotspotInputTexts({

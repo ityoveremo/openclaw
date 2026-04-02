@@ -192,4 +192,64 @@ describe("test planner executor", () => {
 
     artifacts.cleanupTempArtifacts();
   });
+
+  it("uses file-summary reporter output when memory tracing is enabled", async () => {
+    vi.useFakeTimers();
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    const fakeChild = Object.assign(new EventEmitter(), {
+      stdout,
+      stderr,
+      pid: 456,
+      kill: vi.fn(),
+    });
+    let capturedArgs;
+    const spawnMock = vi.fn((_command, args) => {
+      capturedArgs = args;
+      setTimeout(() => {
+        fakeChild.emit("exit", 0, null);
+        fakeChild.emit("close", 0, null);
+      }, 0);
+      return fakeChild;
+    });
+    const artifacts = createExecutionArtifacts({});
+    const executePromise = executePlan(
+      {
+        failurePolicy: "fail-fast",
+        passthroughMetadataOnly: false,
+        passthroughOptionArgs: [],
+        targetedUnits: [],
+        parallelUnits: [
+          { id: "unit-a", args: ["vitest", "run", "src/alpha.test.ts", "src/beta.test.ts"] },
+        ],
+        serialUnits: [],
+        serialPrefixUnits: [],
+        shardCount: 1,
+        shardIndexOverride: null,
+        topLevelSingleShardAssignments: new Map(),
+        runtimeCapabilities: { isWindowsCi: false, isCI: false, isWindows: false },
+        topLevelParallelEnabled: false,
+        topLevelParallelLimit: 1,
+        deferredRunConcurrency: 1,
+        passthroughRequiresSingleRun: false,
+      },
+      {
+        env: {
+          OPENCLAW_TEST_MEMORY_TRACE: "1",
+        },
+        artifacts,
+        spawn: spawnMock,
+      },
+    );
+    await vi.runAllTimersAsync();
+    await expect(executePromise).resolves.toMatchObject({
+      exitCode: 0,
+    });
+
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(capturedArgs).toContain("--reporter=default");
+    expect(capturedArgs).not.toContain("--silent=passed-only");
+
+    artifacts.cleanupTempArtifacts();
+  });
 });
