@@ -944,7 +944,7 @@ describe("resolvePnpmCommandInvocation", () => {
       }),
     ).toEqual({
       command: "/usr/local/bin/node",
-      args: ["/opt/homebrew/lib/node_modules/corepack/dist/pnpm.cjs"],
+      args: ["/opt/homebrew/lib/node_modules/corepack/dist/pnpm.cjs", "exec"],
     });
   });
 
@@ -957,7 +957,7 @@ describe("resolvePnpmCommandInvocation", () => {
       }),
     ).toEqual({
       command: "C:\\Windows\\System32\\cmd.exe",
-      args: ["/d", "/s", "/c", "pnpm.cmd"],
+      args: ["/d", "/s", "/c", "pnpm.cmd", "exec"],
     });
   });
 });

@@ -34,7 +34,7 @@ export function resolvePnpmCommandInvocation(options = {}) {
     if (npmExecBase.startsWith("pnpm")) {
       return {
         command: options.nodeExecPath || process.execPath,
-        args: [npmExecPath],
+        args: [npmExecPath, "exec"],
       };
     }
   }
@@ -42,13 +42,13 @@ export function resolvePnpmCommandInvocation(options = {}) {
   if (options.platform === "win32") {
     return {
       command: options.comSpec || "cmd.exe",
-      args: ["/d", "/s", "/c", "pnpm.cmd"],
+      args: ["/d", "/s", "/c", "pnpm.cmd", "exec"],
     };
   }
 
   return {
     command: "pnpm",
-    args: [],
+    args: ["exec"],
   };
 }
 
