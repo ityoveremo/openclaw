@@ -531,6 +531,20 @@ describe("scripts/test-parallel lane planning", () => {
     expect(output).toContain("vitest.contracts.config.ts");
     expect(output).not.toContain("vitest.unit.config.ts");
   });
+
+  it("routes config artifact and quality contracts through the contracts config", () => {
+    for (const file of [
+      "src/config/doc-baseline.integration.test.ts",
+      "src/config/schema.base.generated.test.ts",
+      "src/config/schema.help.quality.test.ts",
+    ]) {
+      const output = runExplanationOutput(file);
+
+      expect(output).toContain("surface=contracts");
+      expect(output).toContain("vitest.contracts.config.ts");
+      expect(output).not.toContain("vitest.unit.config.ts");
+    }
+  });
   it("prints the planner-backed CI manifest as JSON", () => {
     const output = runCIManifestOutput(
       {

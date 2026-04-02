@@ -14,6 +14,11 @@ import { dedupeFilesPreserveOrder, loadTestRunnerBehavior } from "../test-runner
 
 const baseConfigPrefixes = ["src/agents/", "src/auto-reply/", "src/commands/", "test/", "ui/"];
 const contractTestPrefixes = ["src/channels/plugins/contracts/", "src/plugins/contracts/", "test/"];
+const contractTestFiles = new Set([
+  "src/config/doc-baseline.integration.test.ts",
+  "src/config/schema.base.generated.test.ts",
+  "src/config/schema.help.quality.test.ts",
+]);
 let cachedTestCatalog = null;
 
 export const normalizeRepoPath = (value) => value.split(path.sep).join("/");
@@ -127,6 +132,8 @@ export function loadTestCatalog(options = {}) {
       surface = "bundled";
     } else if (isBoundaryTestFile(normalizedFile)) {
       surface = "unit";
+    } else if (contractTestFiles.has(normalizedFile)) {
+      surface = "contracts";
     } else if (isUnitConfigTestFile(normalizedFile)) {
       surface = "unit";
     } else if (contractTestPrefixes.some((prefix) => normalizedFile.startsWith(prefix))) {
