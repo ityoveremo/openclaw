@@ -1,158 +1,184 @@
 {
   "config": "vitest.unit.config.ts",
-  "generatedAt": "2026-04-01T14:05:07.583Z",
+  "generatedAt": "2026-04-03T10:20:21.727Z",
   "defaultMinDeltaKb": 262144,
   "lane": "unit-fast, unit-fast-batch-*",
   "files": {
-    "src/config/validation.channel-metadata.test.ts": {
-      "deltaKb": 3323986,
-      "sources": ["local-unit-mem:unit-fast-batch-5"]
-    },
-    "src/config/channel-capabilities.test.ts": {
-      "deltaKb": 3271557,
-      "sources": ["local-unit-mem:unit-fast-batch-4"]
-    },
-    "src/infra/outbound/outbound.test.ts": {
-      "deltaKb": 2548040,
-      "sources": ["local-unit-mem:unit-fast-batch-10"]
-    },
-    "src/image-generation/runtime.test.ts": {
-      "deltaKb": 2432696,
-      "sources": ["local-unit-mem:unit-fast-batch-7"]
-    },
-    "src/tui/tui.test.ts": {
-      "deltaKb": 2055209,
-      "sources": ["local-unit-mem:unit-fast-batch-17"]
-    },
-    "src/plugin-sdk/webhook-targets.test.ts": {
-      "deltaKb": 1897923,
-      "sources": ["local-unit-mem:unit-fast-batch-14"]
-    },
-    "src/cli/cron-cli.test.ts": {
-      "deltaKb": 1866465,
-      "sources": ["local-unit-mem:unit-fast-batch-2"]
-    },
-    "src/media-understanding/runner.vision-skip.test.ts": {
-      "deltaKb": 1835008,
-      "sources": ["local-unit-mem:unit-fast-batch-13"]
-    },
-    "src/infra/plugin-approval-forwarder.test.ts": {
-      "deltaKb": 1761608,
-      "sources": ["local-unit-mem:unit-fast-batch-11"]
-    },
-    "src/infra/heartbeat-runner.ghost-reminder.test.ts": {
-      "deltaKb": 1730150,
-      "sources": ["local-unit-mem:unit-fast-batch-9"]
-    },
-    "src/infra/outbound/message-action-runner.plugin-dispatch.test.ts": {
-      "deltaKb": 1719665,
-      "sources": ["local-unit-mem:unit-fast-batch-10"]
-    },
-    "src/cron/isolated-agent.delivery-target-thread-session.test.ts": {
-      "deltaKb": 1656750,
-      "sources": ["local-unit-mem:unit-fast-batch-6"]
-    },
-    "src/infra/channel-summary.test.ts": {
-      "deltaKb": 1593836,
-      "sources": ["local-unit-mem:unit-fast-batch-8"]
-    },
-    "src/plugins/tools.optional.test.ts": {
-      "deltaKb": 1593836,
-      "sources": ["local-unit-mem:unit-fast-batch-15"]
-    },
-    "src/security/fix.test.ts": {
-      "deltaKb": 1551892,
-      "sources": ["local-unit-mem:unit-fast-batch-16"]
-    },
-    "src/cron/isolated-agent.delivers-response-has-heartbeat-ok-but-includes.test.ts": {
-      "deltaKb": 1363149,
-      "sources": ["local-unit-mem:unit-fast-batch-6"]
-    },
-    "src/cron/isolated-agent.direct-delivery-core-channels.test.ts": {
-      "deltaKb": 1121976,
-      "sources": ["local-unit-mem:unit-fast-batch-6"]
-    },
-    "src/infra/outbound/channel-resolution.test.ts": {
-      "deltaKb": 1111491,
-      "sources": ["openclaw-test-memory-trace:unit-heavy-2"]
-    },
-    "src/cron/isolated-agent/run.skill-filter.test.ts": {
-      "deltaKb": 1069548,
-      "sources": ["openclaw-test-memory-trace:unit-run.skill-filter-memory-isolated"]
-    },
-    "src/infra/outbound/deliver.test.ts": {
-      "deltaKb": 1059062,
-      "sources": ["openclaw-deliver-mem:unit"]
-    },
-    "src/cron/isolated-agent.uses-last-non-empty-agent-text-as.test.ts": {
-      "deltaKb": 1048576,
-      "sources": [
-        "openclaw-test-memory-trace:unit-isolated-agent.uses-last-non-empty-agent-text-as-memory-isolated"
-      ]
-    },
-    "src/cron/isolated-agent.skips-delivery-without-whatsapp-recipient-besteffortdeliver-true.test.ts": {
-      "deltaKb": 1026355,
-      "sources": [
-        "openclaw-test-memory-trace:unit-isolated-agent.skips-delivery-without-whatsapp-recipient-besteffortdeliver-true-memory-isolated"
-      ]
-    },
-    "src/cron/isolated-agent/run.cron-model-override.test.ts": {
-      "deltaKb": 946790,
-      "sources": ["openclaw-test-memory-trace:unit-run.cron-model-override-memory-isolated"]
-    },
-    "src/cron/isolated-agent.direct-delivery-forum-topics.test.ts": {
-      "deltaKb": 870605,
-      "sources": ["local-unit-mem:unit-fast-batch-6"]
-    },
-    "src/cron/isolated-agent/delivery-target.test.ts": {
-      "deltaKb": 838042,
-      "sources": ["local-unit-mem:unit-fast-batch-6"]
-    },
-    "src/channels/plugins/plugins-core.test.ts": {
-      "deltaKb": 792269,
-      "sources": ["openclaw-plugins-core-mem:unit"]
-    },
-    "src/pairing/pairing-store.test.ts": {
-      "deltaKb": 731853,
-      "sources": ["local-unit-mem:unit-fast-batch-13"]
-    },
-    "src/plugins/manifest-registry.test.ts": {
-      "deltaKb": 684749,
-      "sources": ["openclaw-manifest-registry-mem:unit"]
-    },
-    "src/acp/persistent-bindings.test.ts": {
-      "deltaKb": 643482,
-      "sources": ["local-unit-mem:unit-fast-batch-1"]
-    },
-    "src/plugins/install.test.ts": {
-      "deltaKb": 510874,
-      "sources": ["openclaw-test-memory-trace:unit-install-memory-isolated"]
-    },
-    "ui/src/ui/views/chat.test.ts": {
-      "deltaKb": 509338,
-      "sources": ["openclaw-test-memory-trace:unit-chat-memory-isolated"]
-    },
-    "src/infra/provider-usage.auth.normalizes-keys.test.ts": {
-      "deltaKb": 494080,
-      "sources": [
-        "openclaw-test-memory-trace:unit-provider-usage.auth.normalizes-keys-memory-isolated"
-      ]
+    "src/plugins/wired-hooks-compaction.test.ts": {
+      "deltaKb": 1384120,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-15"]
     },
     "src/plugins/conversation-binding.test.ts": {
-      "deltaKb": 485786,
-      "sources": ["openclaw-test-memory-trace:unit-conversation-binding-memory-isolated"]
+      "deltaKb": 977920,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-9"]
     },
-    "src/infra/outbound/session-binding-service.test.ts": {
-      "deltaKb": 391475,
-      "sources": ["local-unit-mem:unit-fast-batch-10"]
+    "src/config/config.plugin-validation.test.ts": {
+      "deltaKb": 976486,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-4"]
     },
-    "src/channels/model-overrides.test.ts": {
-      "deltaKb": 380109,
-      "sources": ["local-unit-mem:unit-fast-batch-1"]
+    "src/config/config.web-search-provider.test.ts": {
+      "deltaKb": 955699,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-2"]
     },
-    "src/channels/inbound-debounce-policy.test.ts": {
-      "deltaKb": 276685,
-      "sources": ["local-unit-mem:unit-fast-batch-1"]
+    "src/tasks/task-registry.test.ts": {
+      "deltaKb": 936755,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-15"]
+    },
+    "src/media-understanding/apply.test.ts": {
+      "deltaKb": 923648,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-12"]
+    },
+    "src/cron/isolated-agent.delivers-response-has-heartbeat-ok-but-includes.test.ts": {
+      "deltaKb": 880333,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-6"]
+    },
+    "src/infra/provider-usage.auth.plugin.test.ts": {
+      "deltaKb": 873882,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-10"]
+    },
+    "src/plugins/bundled-plugin-metadata.test.ts": {
+      "deltaKb": 871014,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-13"]
+    },
+    "src/config/config.nix-integration-u3-u5-u9.test.ts": {
+      "deltaKb": 870195,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-4"]
+    },
+    "src/infra/provider-usage.auth.normalizes-keys.test.ts": {
+      "deltaKb": 850330,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-1"]
+    },
+    "src/web-search/runtime.test.ts": {
+      "deltaKb": 815206,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-17"]
+    },
+    "src/channels/plugins/binding-targets.test.ts": {
+      "deltaKb": 811520,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-12"]
+    },
+    "src/media-understanding/audio-preflight.test.ts": {
+      "deltaKb": 791450,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-3"]
+    },
+    "src/acp/control-plane/manager.test.ts": {
+      "deltaKb": 739123,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-1"]
+    },
+    "src/cron/isolated-agent/run.message-tool-policy.test.ts": {
+      "deltaKb": 703488,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-5"]
+    },
+    "src/plugins/install.test.ts": {
+      "deltaKb": 672461,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-14"]
+    },
+    "src/infra/node-pairing.test.ts": {
+      "deltaKb": 664269,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-9"]
+    },
+    "src/acp/runtime/session-meta.test.ts": {
+      "deltaKb": 662938,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-6"]
+    },
+    "src/plugins/install.path.test.ts": {
+      "deltaKb": 647578,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-14"]
+    },
+    "src/process/exec.test.ts": {
+      "deltaKb": 637952,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-13"]
+    },
+    "src/tasks/task-executor-boundary.test.ts": {
+      "deltaKb": 634573,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-16"]
+    },
+    "src/cron/service.session-reaper-in-finally.test.ts": {
+      "deltaKb": 627098,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-6"]
+    },
+    "src/channels/plugins/acp-bindings.test.ts": {
+      "deltaKb": 606003,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-11"]
+    },
+    "src/tasks/task-registry-import-boundary.test.ts": {
+      "deltaKb": 564429,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-7"]
+    },
+    "src/tasks/task-flow-registry-import-boundary.test.ts": {
+      "deltaKb": 556442,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-8"]
+    },
+    "src/cli/nodes-cli.coverage.test.ts": {
+      "deltaKb": 549069,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-3"]
+    },
+    "src/entry.version-fast-path.test.ts": {
+      "deltaKb": 545280,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-5"]
+    },
+    "src/plugins/runtime/local-runtime-module.test.ts": {
+      "deltaKb": 543027,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-10"]
+    },
+    "src/cli/daemon-cli/lifecycle-core.test.ts": {
+      "deltaKb": 533299,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-2"]
+    },
+    "src/hooks/loader.test.ts": {
+      "deltaKb": 528077,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-7"]
+    },
+    "ui/src/ui/app-chat.test.ts": {
+      "deltaKb": 520499,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-18"]
+    },
+    "src/pairing/pairing-store.test.ts": {
+      "deltaKb": 492749,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-10"]
+    },
+    "src/infra/update-runner.test.ts": {
+      "deltaKb": 492442,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-11"]
+    },
+    "src/infra/device-pairing.test.ts": {
+      "deltaKb": 468378,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-8"]
+    },
+    "src/acp/persistent-bindings.test.ts": {
+      "deltaKb": 460800,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-5"]
+    },
+    "src/infra/run-node.test.ts": {
+      "deltaKb": 460288,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-11"]
+    },
+    "src/config/sessions/store.pruning.integration.test.ts": {
+      "deltaKb": 436122,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-7"]
+    },
+    "src/infra/outbound/deliver.test.ts": {
+      "deltaKb": 354714,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-9"]
+    },
+    "src/logging/log-file-size-cap.test.ts": {
+      "deltaKb": 347546,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-13"]
+    },
+    "src/config/config-misc.test.ts": {
+      "deltaKb": 303923,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-11"]
+    },
+    "src/flows/search-setup.test.ts": {
+      "deltaKb": 296755,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-10"]
+    },
+    "src/config/io.runtime-snapshot-write.test.ts": {
+      "deltaKb": 283546,
+      "sources": ["openclaw-unit-memory-20260403b:unit-fast-batch-1"]
+    },
+    "src/cli/config-cli.integration.test.ts": {
+      "deltaKb": 282931,
+      "sources": ["openclaw-unit-memory-20260402-v2:unit-fast-batch-2"]
     }
   }
 }
