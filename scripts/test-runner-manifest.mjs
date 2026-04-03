@@ -212,10 +212,7 @@ const loadMemoryHotspotManifest = (manifestPath, fallbackManifest, options = {})
   );
 
   const manifest = {
-    config:
-      typeof raw.config === "string" && raw.config
-        ? raw.config
-        : fallbackManifest.config,
+    config: typeof raw.config === "string" && raw.config ? raw.config : fallbackManifest.config,
     generatedAt: typeof raw.generatedAt === "string" ? raw.generatedAt : "",
     defaultMinDeltaKb,
     files,
@@ -240,7 +237,6 @@ export function loadExtensionMemoryHotspotManifest(options = {}) {
     defaultExtensionMemoryHotspotManifest,
     options,
   );
-}
 }
 
 export function selectTimedHeavyFiles({
