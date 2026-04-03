@@ -41,6 +41,7 @@ const clearPlannerShardEnv = (env) => {
   delete nextEnv.OPENCLAW_TEST_INCLUDE_CHANNELS;
   delete nextEnv.OPENCLAW_TEST_INCLUDE_GATEWAY;
   delete nextEnv.OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_MS;
+  delete nextEnv.OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_FILES;
   return nextEnv;
 };
 
@@ -425,14 +426,20 @@ describe("scripts/test-parallel lane planning", () => {
     expect(output).toMatch(/channels-batch-1 filters=\d+ maxWorkers=5/);
   });
 
-  it("uses coarser unit-fast batching for high-memory local multi-surface runs", () => {
+  it("keeps unit-fast shared batches bounded for high-memory local multi-surface runs", () => {
     const output = runPlannerOutput(
       { surfaces: ["unit", "extensions", "channels"] },
       createHighMemoryLocalPlannerEnv(),
     );
 
-    expect(output).toContain("unit-fast-batch-4");
-    expect(output).not.toContain("unit-fast-batch-5");
+    const unitBatchLines = getPlanLines(output, "unit-fast-batch-");
+    const unitBatchFilterCounts = unitBatchLines.map((line) =>
+      parseNumericPlanField(line, "filters"),
+    );
+
+    expect(unitBatchLines.length).toBeGreaterThanOrEqual(10);
+    expect(unitBatchLines.every((line) => line.includes("maxWorkers=6"))).toBe(true);
+    expect(Math.max(...unitBatchFilterCounts)).toBeLessThanOrEqual(80);
   });
 
   it("uses earlier targeted channel batching on high-memory local hosts", () => {
@@ -462,8 +469,8 @@ describe("scripts/test-parallel lane planning", () => {
     ).toBe(targetedChannelProxyFiles.length);
   });
 
-  it("uses targeted unit batching on high-memory local hosts", () => {
-    const { sharedTargetedUnitProxyFiles, targetedUnitProxyFiles } = getTargetedProxyFiles();
+  it("keeps targeted unit reruns consolidated on high-memory local hosts", () => {
+    const { targetedUnitProxyFiles } = getTargetedProxyFiles();
     const output = runPlannerOutput(
       {
         surfaces: ["unit"],
@@ -473,16 +480,16 @@ describe("scripts/test-parallel lane planning", () => {
     );
 
     const unitBatchLines = getPlanLines(output, "unit-batch-");
-    const unitBatchFilterCounts = unitBatchLines.map((line) =>
-      parseNumericPlanField(line, "filters"),
-    );
+    const unitPlanLines = output
+      .split("\n")
+      .filter((line) => line.startsWith("unit ") || line.startsWith("unit-"));
 
-    expect(unitBatchLines.length).toBeGreaterThanOrEqual(3);
-    expect(unitBatchLines.every((line) => line.includes("maxWorkers=6"))).toBe(true);
-    expect(Math.max(...unitBatchFilterCounts)).toBeLessThan(40);
-    expect(unitBatchFilterCounts.reduce((sum, count) => sum + count, 0)).toBe(
-      sharedTargetedUnitProxyFiles.length,
-    );
+    expect(unitBatchLines.length).toBe(0);
+    expect(unitPlanLines.filter((line) => line.startsWith("unit filters=")).length).toBe(1);
+    expect(
+      unitPlanLines.reduce((sum, line) => sum + parseNumericPlanField(line, "filters"), 0),
+    ).toBe(targetedUnitProxyFiles.length);
+    expect(output).toContain("unit filters=99 maxWorkers=6 surface=unit isolate=no pool=forks");
     expect(output).toContain("unit-qr-dashboard.integration-isolated filters=1 maxWorkers=2");
   });
 

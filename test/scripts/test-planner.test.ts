@@ -164,7 +164,35 @@ describe("test planner", () => {
     ).toBe(true);
     artifacts.cleanupTempArtifacts();
   });
+  it("caps local unit shared batches by file count when timings are fully known", () => {
+    const env = {
+      RUNNER_OS: "macOS",
+      OPENCLAW_TEST_HOST_CPU_COUNT: "10",
+      OPENCLAW_TEST_HOST_MEMORY_GIB: "64",
+      OPENCLAW_TEST_LOAD_AWARE: "0",
+      OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_FILES: "80",
+    };
+    const artifacts = createExecutionArtifacts(env);
+    const plan = buildExecutionPlan(
+      {
+        profile: null,
+        mode: "local",
+        surfaces: ["unit"],
+        passthroughArgs: [],
+      },
+      {
+        env,
+        platform: "darwin",
+        writeTempJsonArtifact: artifacts.writeTempJsonArtifact,
+      },
+    );
 
+    const sharedUnitBatches = plan.selectedUnits.filter((unit) => unit.id.startsWith("unit-fast"));
+
+    expect(sharedUnitBatches.length).toBeGreaterThan(1);
+    expect(sharedUnitBatches.every((unit) => (unit.includeFiles?.length ?? 0) <= 80)).toBe(true);
+    artifacts.cleanupTempArtifacts();
+  });
   it("uses smaller shared extension batches on constrained local hosts", () => {
     const env = {
       RUNNER_OS: "macOS",
@@ -391,7 +419,7 @@ describe("test planner", () => {
     expect(plan.executionBudget.unitIsolatedWorkers).toBe(1);
     expect(plan.executionBudget.topLevelParallelLimitNoIsolate).toBe(4);
     expect(plan.executionBudget.topLevelParallelLimitIsolated).toBe(1);
-    expect(plan.topLevelParallelLimit).toBe(4);
+    expect(plan.topLevelParallelLimit).toBe(3);
     expect(plan.deferredRunConcurrency).toBe(1);
     artifacts.cleanupTempArtifacts();
   });
@@ -401,6 +429,7 @@ describe("test planner", () => {
       RUNNER_OS: "macOS",
       OPENCLAW_TEST_HOST_CPU_COUNT: "16",
       OPENCLAW_TEST_HOST_MEMORY_GIB: "128",
+      OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_FILES: "5000",
     };
     const artifacts = createExecutionArtifacts(env);
     const plan = buildExecutionPlan(

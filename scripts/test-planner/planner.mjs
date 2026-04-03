@@ -331,11 +331,35 @@ const splitFilesByDurationBudget = (files, targetDurationMs, estimateDurationMs)
 };
 
 const splitFilesByBalancedDurationBudget = (files, targetDurationMs, estimateDurationMs) => {
+  return splitFilesByBalancedBudget(
+    files,
+    { targetDurationMs, targetFilesPerBatch: 0 },
+    estimateDurationMs,
+  );
+};
+
+const splitFilesByBalancedBudget = (
+  files,
+  { targetDurationMs, targetFilesPerBatch },
+  estimateDurationMs,
+) => {
   if (!Number.isFinite(targetDurationMs) || targetDurationMs <= 0 || files.length <= 1) {
-    return [files];
+    if ((!Number.isFinite(targetFilesPerBatch) || targetFilesPerBatch <= 0) && files.length <= 1) {
+      return [files];
+    }
   }
   const totalDurationMs = files.reduce((sum, file) => sum + estimateDurationMs(file), 0);
-  const batchCount = clamp(Math.ceil(totalDurationMs / targetDurationMs), 1, files.length);
+  const batchCount = resolveDynamicShardCount({
+    estimatedDurationMs: totalDurationMs,
+    fileCount: files.length,
+    targetDurationMs,
+    targetFilesPerShard: targetFilesPerBatch,
+    minShards: 1,
+    maxShards: files.length,
+  });
+  if (batchCount <= 1) {
+    return [files];
+  }
   const originalOrder = new Map(files.map((file, index) => [file, index]));
   return packFilesByDuration(files, batchCount, estimateDurationMs).map((batch) =>
     [...batch].toSorted(
@@ -628,6 +652,11 @@ const buildDefaultUnits = (context, request) => {
     "OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_MS",
     defaultUnitFastBatchTargetMs,
   );
+  const unitFastBatchTargetFiles = parseEnvNumber(
+    env,
+    "OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_FILES",
+    80,
+  );
   const defaultChannelsBatchTargetMs = executionBudget.channelsBatchTargetMs;
   const channelsBatchTargetMs = parseEnvNumber(
     env,
@@ -673,9 +702,12 @@ const buildDefaultUnits = (context, request) => {
     for (const [laneIndex, files] of unitFastBuckets.entries()) {
       const laneName =
         unitFastBuckets.length === 1 ? "unit-fast" : `unit-fast-${String(laneIndex + 1)}`;
-      const recycledBatches = splitFilesByDurationBudget(
+      const recycledBatches = splitFilesByBalancedBudget(
         files,
-        unitFastBatchTargetMs,
+        {
+          targetDurationMs: unitFastBatchTargetMs,
+          targetFilesPerBatch: unitFastBatchTargetFiles,
+        },
         estimateUnitDurationMs,
       );
       for (const [batchIndex, batch] of recycledBatches.entries()) {

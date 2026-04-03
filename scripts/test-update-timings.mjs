@@ -36,7 +36,7 @@ if (process.argv.slice(2).includes("--help")) {
       "  --config <path>                Vitest config to run when no report is supplied",
       "  --report <path>                Reuse an existing Vitest JSON report",
       "  --out <path>                   Output manifest path (default follows --config)",
-      "  --limit <count>                Max number of file timings to retain (default: 256)",
+      "  --limit <count>                Max number of file timings to retain (default: all)",
       "  --default-duration-ms <ms>     Fallback duration for unknown files (default follows --config)",
       "  --help                         Show this help text",
       "",
@@ -55,7 +55,7 @@ function parseArgs(argv) {
     argv,
     {
       config: "vitest.unit.config.ts",
-      limit: 256,
+      limit: Number.MAX_SAFE_INTEGER,
       reportPath: "",
       out: "",
       defaultDurationMs: 0,
