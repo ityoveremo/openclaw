@@ -1,3 +1,4 @@
+import { resolveWhatsAppAccount } from "../../../extensions/whatsapp/api.js";
 import type { ChannelId } from "../../channels/plugins/types.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { resolveAgentMainSessionKey } from "../../config/sessions/main-session.js";
@@ -8,7 +9,6 @@ import { tryResolveLoadedOutboundTarget } from "../../infra/outbound/targets-loa
 import { resolveSessionDeliveryTarget } from "../../infra/outbound/targets-session.js";
 import type { OutboundChannel } from "../../infra/outbound/targets.js";
 import { readChannelAllowFromStoreSync } from "../../pairing/pairing-store.js";
-import { resolveWhatsAppAccount } from "../../plugin-sdk/whatsapp-surface.js";
 import { normalizeWhatsAppTarget } from "../../plugin-sdk/whatsapp-targets.js";
 import { buildChannelAccountBindings } from "../../routing/bindings.js";
 import { normalizeAccountId, normalizeAgentId } from "../../routing/session-key.js";
