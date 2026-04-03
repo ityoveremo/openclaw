@@ -251,6 +251,10 @@
         "reason": "This Matrix legacy crypto migration suite touches temp-home filesystem fixtures and can time out when it shares the busy unit-fast lane; keep it isolated for deterministic migration timing."
       },
       {
+        "file": "src/infra/fs-safe.test.ts",
+        "reason": "This filesystem safety suite is green in direct reruns but pushes the timed-heavy unit lane well past 1 GiB RSS; keep it isolated so its path-fixture and subprocess coverage can recycle the worker immediately."
+      },
+      {
         "file": "src/infra/state-migrations.test.ts",
         "reason": "This legacy state migration suite builds multi-surface fixture trees and passes when rerun directly; keep it isolated so shared unit-fast pressure does not push it past the timeout budget."
       },
@@ -265,6 +269,10 @@
       {
         "file": "src/plugin-sdk/package-contract-guardrails.test.ts",
         "reason": "This packed-artifact contract suite shells out through npm pack/install and passes alone but can overrun the shared unit-fast lane when it competes with other package-heavy unit batches."
+      },
+      {
+        "file": "src/plugins/loader.cli-metadata.test.ts",
+        "reason": "This CLI metadata loader suite is green alone but its real channel-entry capture inflates the timed-heavy unit lane; keep it isolated so the worker can recycle immediately after the metadata import path."
       },
       {
         "file": "src/secrets/runtime.coverage.test.ts",
