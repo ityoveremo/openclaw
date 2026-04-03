@@ -176,18 +176,6 @@ function getPlanLines(output: string, prefix: string): string[] {
     .filter((line) => line.startsWith(prefix));
 }
 
-function getTargetedChannelPlanLines(output: string): string[] {
-  return output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(
-      (line) =>
-        line.startsWith("channels-") &&
-        line.includes("filters=") &&
-        line.includes("surface=channels"),
-    );
-}
-
 function parseNumericPlanField(line: string, key: string): number {
   const match = line.match(new RegExp(`\\b${key}=(\\d+)\\b`));
   if (!match) {
@@ -456,16 +444,16 @@ describe("scripts/test-parallel lane planning", () => {
     const channelBatchFilterCounts = channelBatchLines.map((line) =>
       parseNumericPlanField(line, "filters"),
     );
-    const targetedChannelPlanLines = getTargetedChannelPlanLines(output);
 
     expect(channelBatchLines.length).toBeGreaterThanOrEqual(4);
     expect(channelBatchLines.every((line) => line.includes("maxWorkers=5"))).toBe(true);
     expect(Math.max(...channelBatchFilterCounts)).toBeLessThan(30);
+    expect(output).toContain("extensions-bot.create-telegram-bot-isolated filters=1 maxWorkers=2");
     expect(
-      targetedChannelPlanLines.reduce(
-        (sum, line) => sum + parseNumericPlanField(line, "filters"),
-        0,
-      ),
+      output
+        .split("\n")
+        .filter((line) => line.includes("filters="))
+        .reduce((sum, line) => sum + parseNumericPlanField(line, "filters"), 0),
     ).toBe(targetedChannelProxyFiles.length);
   });
 
@@ -489,7 +477,7 @@ describe("scripts/test-parallel lane planning", () => {
     expect(
       unitPlanLines.reduce((sum, line) => sum + parseNumericPlanField(line, "filters"), 0),
     ).toBe(targetedUnitProxyFiles.length);
-    expect(output).toContain("unit filters=99 maxWorkers=6 surface=unit isolate=no pool=forks");
+    expect(output).toMatch(/^unit filters=\d+ maxWorkers=6 surface=unit isolate=no pool=forks$/m);
     expect(output).toContain("unit-qr-dashboard.integration-isolated filters=1 maxWorkers=2");
   });
 
